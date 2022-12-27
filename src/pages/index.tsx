@@ -1,35 +1,41 @@
 import { trpc } from "../utils/trpc";
 
 export default function IndexPage() {
-  const createdTrade = trpc.trades.create.useMutation();
+  const mutation = trpc.users.createUser.useMutation();
 
-  const handleLogin = () => {
-    const data = { price: 5000, quantity: 100, ticker: "aapl" };
-
-    createdTrade.mutate(data);
+  const data = {
+    password: "Bansal@23",
+    firstName: "Satyam",
+    lastName: "Bansal",
+    dateOfBirth: "1999-08-23T00:00:00Z",
+    email: "sbansal1999@gmail.com",
   };
 
-  const allTrades = trpc.trades.show.useQuery();
+  const handleRegister = async () => {
+    mutation.mutate(data);
+  };
 
-  if (!allTrades) return <div>Loading trades...</div>;
+  if (mutation.error)
+    return <div>Something went wrong {mutation.error.message}</div>;
 
-  const trades = allTrades.data;
+  if (mutation.isLoading) return <div>Loading data...</div>;
 
   return (
     <>
-      <button onClick={handleLogin} disabled={createdTrade.isLoading}>
-        Login
-      </button>
-      {createdTrade.error && (
-        <p>Something went wrong! {createdTrade.error.message}</p>
-      )}
-      {JSON.stringify(createdTrade.data)}
       <div>
-        Your trades are
+        <button onClick={handleRegister}>Register</button>
         <div>
-          {trades?.map((trade) => {
-            return <p>{trade.price}</p>;
-          })}
+          <h3>
+            User Data:
+            {JSON.stringify(data)}
+          </h3>
+        </div>
+
+        <div>
+          <h3>
+            Response from API:
+            {JSON.stringify(mutation.data)}
+          </h3>
         </div>
       </div>
     </>
