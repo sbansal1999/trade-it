@@ -32,7 +32,7 @@ export default function IndexPage() {
         </div>
 
         <div>
-          <h3>
+          <h3 className="text-red-500">
             Response from API:
             {JSON.stringify(mutation.data)}
           </h3>
