@@ -1,16 +1,37 @@
 import Head from "next/head";
-import { createRef, FormEvent, useRef } from "react";
+import { createRef, FormEvent, useRef, useState } from "react";
 
-const fetchData = (searchQuery: string) => {};
+type Result = {
+  active: boolean;
+  cik: string;
+  composite_figi: string;
+  currency_name: string;
+  last_updated_utc: string;
+  locale: string;
+  market: string;
+  name: string;
+  primary_exchange: string;
+  share_class_figi: string;
+  ticker: string;
+  type: string;
+};
 
 export default function Home() {
+  const [searchResults, setSearchResults] = useState<Result[]>();
+
   const searchRef = createRef<HTMLInputElement>();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!searchRef.current) return;
 
     const searchQuery = searchRef.current.value;
+
+    searchRef.current.value = "";
+
+    const searchData = await fetchData(searchQuery);
+
+    setSearchResults(searchData);
   };
 
   return (
@@ -41,7 +62,42 @@ export default function Home() {
             </button>
           </form>
         </div>
+
+        <div className="m-10">
+          {searchResults &&
+            searchResults.map((result) => {
+              return (
+                <p>
+                  {result.name +
+                    " " +
+                    result.ticker +
+                    " " +
+                    result.primary_exchange}
+                </p>
+              );
+            })}
+
+          {searchResults?.length}
+        </div>
       </main>
     </>
   );
 }
+
+const fetchData = async (searchQuery: string) => {
+  const POLYGON_KEY = process.env.NEXT_PUBLIC_POLYGON_KEY;
+  const resultLimit = 10;
+
+  const nasdaqQuery = `https://api.polygon.io/v3/reference/tickers?type=CS&market=stocks&exchange=XNAS&search=${searchQuery}&active=true&limit=${resultLimit}&apiKey=${POLYGON_KEY}`;
+  const nyseQuery = `https://api.polygon.io/v3/reference/tickers?type=CS&market=stocks&exchange=XNYS&search=${searchQuery}&active=true&limit=${resultLimit}&apiKey=${POLYGON_KEY}`;
+
+  const responseNasdaq = await fetch(nasdaqQuery);
+  const responseNasdaqJSON = await responseNasdaq.json();
+  const dataNasdaq: Result[] = await responseNasdaqJSON.results;
+
+  const responseNYSE = await fetch(nyseQuery);
+  const responseNYSEJSON = await responseNYSE.json();
+  const dataNYSE: Result[] = await responseNYSEJSON.results;
+
+  return [...dataNasdaq, ...dataNYSE];
+};
