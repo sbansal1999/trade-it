@@ -37,6 +37,9 @@ export default function IndexPage() {
             {JSON.stringify(mutation.data)}
           </h3>
         </div>
+        <button className="rounded bg-sky-700 px-4 py-2 text-white hover:bg-sky-800 sm:px-8 sm:py-3">
+          ABC
+        </button>
       </div>
     </>
   );
