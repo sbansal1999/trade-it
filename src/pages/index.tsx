@@ -26,9 +26,6 @@ export default function Home() {
     if (!searchRef.current) return;
 
     const searchQuery = searchRef.current.value;
-
-    searchRef.current.value = "";
-
     const searchData = await fetchData(searchQuery);
 
     setSearchResults(searchData);
