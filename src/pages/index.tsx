@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { createRef, FormEvent, useRef, useState } from "react";
+import { createRef, FormEvent, useState } from "react";
 
 type Result = {
   active: boolean;
@@ -82,6 +82,7 @@ export default function Home() {
 }
 
 const fetchData = async (searchQuery: string) => {
+  //TODO: handle rate-limit case
   const POLYGON_KEY = process.env.NEXT_PUBLIC_POLYGON_KEY;
   const resultLimit = 10;
 
