@@ -65,9 +65,9 @@ export default function Home() {
 
         <div className="m-10">
           {searchResults &&
-            searchResults.map((result) => {
+            searchResults.map((result, idx) => {
               return (
-                <p>
+                <p key={idx}>
                   {result.name +
                     " " +
                     result.ticker +
