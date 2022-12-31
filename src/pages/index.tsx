@@ -1,6 +1,7 @@
 import { Dialog, Listbox, Transition } from "@headlessui/react";
 import Head from "next/head";
-import { createRef, FormEvent, Fragment, useState } from "react";
+import { createRef, FormEvent, Fragment, useRef, useState } from "react";
+import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
 
 type Result = {
   active: boolean;
@@ -19,6 +20,8 @@ type Result = {
 
 type AppProps = {
   stocks: Result[];
+  showModal: boolean;
+  setShowModal: (arg: boolean) => void;
 };
 
 export default function Home() {
@@ -291,9 +294,10 @@ export default function Home() {
     },
   ]);
   const searchRef = createRef<HTMLInputElement>();
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
+    console.log("clicked");
     e.preventDefault();
 
     setShowModal(true);
@@ -334,14 +338,20 @@ export default function Home() {
           </form>
         </div>
         <div>
-          {showModal ? <ShowStocksModal stocks={searchResults} /> : null}
+          {showModal ? (
+            <ShowStocksModal
+              stocks={searchResults}
+              showModal={showModal}
+              setShowModal={setShowModal}
+            />
+          ) : null}
         </div>
       </main>
     </>
   );
 }
 
-const ShowStocksModal = ({ stocks }: AppProps) => {
+const ShowStocksModal = ({ stocks, showModal, setShowModal }: AppProps) => {
   if (stocks.length === 0) return <div>No Stock Found</div>;
 
   return <></>;
