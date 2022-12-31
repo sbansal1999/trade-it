@@ -3,7 +3,7 @@ import Head from "next/head";
 import { createRef, FormEvent, Fragment, useRef, useState } from "react";
 import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
 
-type Result = {
+type Stock = {
   active: boolean;
   cik: string;
   composite_figi: string;
@@ -19,295 +19,30 @@ type Result = {
 };
 
 type AppProps = {
-  stocks: Result[];
+  stocks: Stock[];
   showModal: boolean;
   setShowModal: (arg: boolean) => void;
+  setSelectedStock: (arg: Stock) => void;
 };
 
 export default function Home() {
-  const [searchResults, setSearchResults] = useState<Result[]>([
-    {
-      ticker: "ASYS",
-      name: "Amtech Systems Inc",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000720500",
-      composite_figi: "BBG000BCJDW6",
-      share_class_figi: "BBG001S5NX89",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AMPG",
-      name: "AMPLITECH GROUP INC. COM",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001518461",
-      composite_figi: "BBG00394F954",
-      share_class_figi: "BBG00394F9X3",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AUR",
-      name: "Aurora Innovation, Inc. Class A Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001828108",
-      composite_figi: "BBG00Z92Y6X1",
-      share_class_figi: "BBG00Z92Y6Y0",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ANTX",
-      name: "AN2 Therapeutics, Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001880438",
-      composite_figi: "BBG00QYLYBK4",
-      share_class_figi: "BBG00QYLYBL3",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ARCT",
-      name: "Arcturus Therapeutics Holdings Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001768224",
-      composite_figi: "BBG00NNW8JK1",
-      share_class_figi: "BBG00NNW8JL0",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AVAV",
-      name: "AeroVironment, Inc.",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001368622",
-      composite_figi: "BBG000GX14P2",
-      share_class_figi: "BBG001SPPWP6",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ALVR",
-      name: "AlloVir, Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001754068",
-      composite_figi: "BBG00P80SH34",
-      share_class_figi: "BBG00P80SH43",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ALLR",
-      name: "Allarity Therapeutics, Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001860657",
-      composite_figi: "BBG012NXCZP8",
-      share_class_figi: "BBG012NXCZQ7",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AGIL",
-      name: "AgileThought, Inc. Class A Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001790625",
-      composite_figi: "BBG00QYKZB43",
-      share_class_figi: "BBG00RCQNY45",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ACHV",
-      name: "Achieve Life Sciences, Inc.",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000949858",
-      composite_figi: "BBG000FB8S62",
-      share_class_figi: "BBG001S8JF14",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ABCB",
-      name: "Ameris Bancorp",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000351569",
-      composite_figi: "BBG000CDY3H5",
-      share_class_figi: "BBG001S80PX7",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AMEH",
-      name: "Apollo Medical Holdings, Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001083446",
-      composite_figi: "BBG000H7ZK57",
-      share_class_figi: "BBG001S96MS2",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AREC",
-      name: "AMERICAN RESOURCES CORP",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001590715",
-      composite_figi: "BBG005VQ4CM1",
-      share_class_figi: "BBG005VQ4CN0",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AMWD",
-      name: "American Woodmark Corp",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000794619",
-      composite_figi: "BBG000BBX657",
-      share_class_figi: "BBG001S5NQ57",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ALLK",
-      name: "Allakos Inc.",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001564824",
-      composite_figi: "BBG003QBJKN0",
-      share_class_figi: "BBG003QBJKP8",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "AVRO",
-      name: "AVROBIO, Inc. Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001681087",
-      composite_figi: "BBG00DJ4T7D1",
-      share_class_figi: "BBG00DJ4T7F9",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ADBE",
-      name: "Adobe Inc.",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000796343",
-      composite_figi: "BBG000BB5006",
-      share_class_figi: "BBG001S5NCQ5",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ATRO",
-      name: "Astronics Corp",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0000008063",
-      composite_figi: "BBG000BCLBY5",
-      share_class_figi: "BBG001S5NYK3",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-    {
-      ticker: "ARCK",
-      name: "Arbor Rapha Capital Bioholdings Corp. I Class A Common Stock",
-      market: "stocks",
-      locale: "us",
-      primary_exchange: "XNAS",
-      type: "CS",
-      active: true,
-      currency_name: "usd",
-      cik: "0001855886",
-      composite_figi: "BBG012LSNLP0",
-      share_class_figi: "BBG012LSNMQ7",
-      last_updated_utc: "2022-12-29T00:00:00Z",
-    },
-  ]);
+  const [searchResults, setSearchResults] = useState<Stock[]>([]);
   const searchRef = createRef<HTMLInputElement>();
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(true);
+  const [selectedStock, setSelectedStock] = useState<Stock>();
+  const [showSearchSpinner, setShowSearchSpinner] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
-    console.log("clicked");
     e.preventDefault();
-
-    setShowModal(true);
 
     if (!searchRef.current) return;
 
-    // const searchQuery = searchRef.current.value;
-    // const searchData = await fetchStockSearchData(searchQuery);
-
-    // setSearchResults(searchData);
+    const searchQuery = searchRef.current.value;
+    setShowSearchSpinner(true);
+    const searchData = await fetchStockSearchData(searchQuery);
+    setShowSearchSpinner(false);
+    setSearchResults(searchData);
+    setShowModal(true);
   };
 
   return (
@@ -332,8 +67,14 @@ export default function Home() {
               />
             </label>
             <div className="m-5" />
-            <button className="w-full rounded-md bg-blue-400 py-3 text-white hover:bg-blue-900">
-              <span className="text-3xl">SEARCH</span>
+            <button className="w-full rounded-full bg-blue-400 py-3 text-white hover:bg-blue-900">
+              {showSearchSpinner ? (
+                <div className="flex justify-center">
+                  <Spinner />
+                </div>
+              ) : (
+                <span className="text-3xl">SEARCH</span>
+              )}
             </button>
           </form>
         </div>
@@ -343,16 +84,32 @@ export default function Home() {
               stocks={searchResults}
               showModal={showModal}
               setShowModal={setShowModal}
+              setSelectedStock={setSelectedStock}
             />
           ) : null}
         </div>
+        {selectedStock && (
+          <div className="text-3xl">
+            {selectedStock.ticker + " - " + selectedStock.name}
+          </div>
+        )}
       </main>
     </>
   );
 }
 
-const ShowStocksModal = ({ stocks, showModal, setShowModal }: AppProps) => {
+const ShowStocksModal = ({
+  stocks,
+  showModal,
+  setShowModal,
+  setSelectedStock,
+}: AppProps) => {
   if (stocks.length === 0) return <div>No Stock Found</div>;
+
+  const handleStockSelect = (idx: number) => {
+    setSelectedStock(stocks[idx]);
+    setShowModal(false);
+  };
 
   return (
     <>
@@ -385,7 +142,7 @@ const ShowStocksModal = ({ stocks, showModal, setShowModal }: AppProps) => {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-2/5 sm:max-w-max">
                   <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div className="sm:flex sm:items-start">
                       <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -402,13 +159,21 @@ const ShowStocksModal = ({ stocks, showModal, setShowModal }: AppProps) => {
                             Select the stock you would like to trade.
                           </p>
                         </Dialog.Title>
-                        <div className="mt-2 h-1/2 overflow-y-auto">
-                          {stocks.map((stock, idx) => (
-                            <div key={idx}>
-                              {stock.ticker + " - " + stock.name}
-                            </div>
-                          ))}
-                        </div>
+                        <Dialog.Description className="w-fw">
+                          <div className="mt-2 max-h-[40rem] overflow-auto rounded-md">
+                            {stocks.map((stock, idx) => (
+                              <button
+                                className="mt-1 w-full bg-slate-300 p-5 text-left hover:bg-slate-600"
+                                key={idx}
+                                onClick={() => {
+                                  handleStockSelect(idx);
+                                }}
+                              >
+                                {stock.ticker + " - " + stock.name}
+                              </button>
+                            ))}
+                          </div>
+                        </Dialog.Description>
                       </div>
                     </div>
                   </div>
@@ -438,6 +203,31 @@ const ShowStocksModal = ({ stocks, showModal, setShowModal }: AppProps) => {
   );
 };
 
+const Spinner = () => {
+  return (
+    <svg
+      className="-ml-1 mr-3 h-9 w-8 animate-spin text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+  );
+};
+
 const fetchStockSearchData = async (searchQuery: string) => {
   //TODO: handle rate-limit case
   const POLYGON_KEY = process.env.NEXT_PUBLIC_POLYGON_KEY;
@@ -448,11 +238,11 @@ const fetchStockSearchData = async (searchQuery: string) => {
 
   const responseNasdaq = await fetch(nasdaqQuery);
   const responseNasdaqJSON = await responseNasdaq.json();
-  const dataNasdaq: Result[] = await responseNasdaqJSON.results;
+  const dataNasdaq: Stock[] = await responseNasdaqJSON.results;
 
   const responseNYSE = await fetch(nyseQuery);
   const responseNYSEJSON = await responseNYSE.json();
-  const dataNYSE: Result[] = await responseNYSEJSON.results;
+  const dataNYSE: Stock[] = await responseNYSEJSON.results;
 
   return [...dataNasdaq, ...dataNYSE];
 };
