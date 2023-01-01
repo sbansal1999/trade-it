@@ -1,35 +1,23 @@
-import { Dialog, Listbox, Transition } from "@headlessui/react";
+import { Dialog, Transition } from "@headlessui/react";
 import Head from "next/head";
-import { createRef, FormEvent, Fragment, useRef, useState } from "react";
+import { createRef, FormEvent, Fragment, useState } from "react";
 import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
-
-type Stock = {
-  active: boolean;
-  cik: string;
-  composite_figi: string;
-  currency_name: string;
-  last_updated_utc: string;
-  locale: string;
-  market: string;
-  name: string;
-  primary_exchange: string;
-  share_class_figi: string;
-  ticker: string;
-  type: string;
-};
+import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
+import { env } from "../env/client.mjs";
+import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
 
 type AppProps = {
-  stocks: Stock[];
+  stocks: ITickersResults[];
   showModal: boolean;
   setShowModal: (arg: boolean) => void;
-  setSelectedStock: (arg: Stock) => void;
+  setSelectedStock: (arg: ITickersResults) => void;
 };
 
 export default function Home() {
-  const [searchResults, setSearchResults] = useState<Stock[]>([]);
+  const [searchResults, setSearchResults] = useState<ITickersResults[]>([]);
   const searchRef = createRef<HTMLInputElement>();
   const [showModal, setShowModal] = useState(true);
-  const [selectedStock, setSelectedStock] = useState<Stock>();
+  const [selectedStock, setSelectedStock] = useState<ITickersResults>();
   const [showSearchSpinner, setShowSearchSpinner] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -223,19 +211,26 @@ const Spinner = () => {
 
 const fetchStockSearchData = async (searchQuery: string) => {
   //TODO: handle rate-limit case
-  const POLYGON_KEY = process.env.NEXT_PUBLIC_POLYGON_KEY;
+  const POLYGON_KEY = env.NEXT_PUBLIC_POLYGON_KEY;
   const resultLimit = 10;
 
-  const nasdaqQuery = `https://api.polygon.io/v3/reference/tickers?type=CS&market=stocks&exchange=XNAS&search=${searchQuery}&active=true&limit=${resultLimit}&apiKey=${POLYGON_KEY}`;
-  const nyseQuery = `https://api.polygon.io/v3/reference/tickers?type=CS&market=stocks&exchange=XNYS&search=${searchQuery}&active=true&limit=${resultLimit}&apiKey=${POLYGON_KEY}`;
+  const reference = referenceClient(POLYGON_KEY);
 
-  const responseNasdaq = await fetch(nasdaqQuery);
-  const responseNasdaqJSON = await responseNasdaq.json();
-  const dataNasdaq: Stock[] = await responseNasdaqJSON.results;
+  const queryObject: ITickersQuery = {
+    type: "CS",
+    market: "stocks",
+    search: searchQuery,
+    active: "true",
+    limit: resultLimit,
+  };
 
-  const responseNYSE = await fetch(nyseQuery);
-  const responseNYSEJSON = await responseNYSE.json();
-  const dataNYSE: Stock[] = await responseNYSEJSON.results;
+  const dataNasdaq = (
+    await reference.tickers({ ...queryObject, exchange: "XNAS" })
+  ).results;
+
+  const dataNYSE = (
+    await reference.tickers({ ...queryObject, exchange: "XNYS" })
+  ).results;
 
   return [...dataNasdaq, ...dataNYSE];
 };
