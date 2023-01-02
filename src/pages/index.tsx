@@ -3,27 +3,45 @@ import Head from "next/head";
 import { createRef, FormEvent, Fragment, useState } from "react";
 import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
 import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
-import { env } from "../env/client.mjs";
 import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
+
+import { env } from "../env/client.mjs";
+import { getCents, getDollars } from "../utils/utils";
 
 type AppProps = {
   stocks: ITickersResults[];
   showModal: boolean;
   setShowModal: (arg: boolean) => void;
-  setSelectedStock: (arg: ITickersResults) => void;
+  setSelectedStock: (arg: ITickersResults | null) => void;
+  setSelectedStockQuote: (arg: StockQuote | null) => void;
+};
+
+type StockQuote = {
+  c: number;
+  h: number;
+  l: number;
+  o: number;
+  pc: number;
+  t: number;
+  d: number;
+  dp: number;
 };
 
 export default function Home() {
   const [searchResults, setSearchResults] = useState<ITickersResults[]>([]);
   const searchRef = createRef<HTMLInputElement>();
   const [showModal, setShowModal] = useState(true);
-  const [selectedStock, setSelectedStock] = useState<ITickersResults>();
+  const [selectedStock, setSelectedStock] = useState<ITickersResults | null>();
   const [showSearchSpinner, setShowSearchSpinner] = useState(false);
+  const [selectedStockQuote, setSelectedStockQuote] =
+    useState<StockQuote | null>();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!searchRef.current) return;
+    if (!searchRef.current) {
+      return;
+    }
 
     const searchQuery = searchRef.current.value;
     setShowSearchSpinner(true);
@@ -50,8 +68,9 @@ export default function Home() {
                 type="text"
                 placeholder="AAPL"
                 ref={searchRef}
-                className="text-md placeholder-grey-500 disbled focus:ring-slate-400focus:invalid:border-pink-500 mt-1 block w-full rounded-md border-2
-                border-slate-400 bg-white p-2 focus:border-sky-500  focus:outline-none focus:ring-1"
+                className="text-md placeholder-grey-500 disbled border-1 mt-1 block w-full rounded-md border-2 border-slate-400
+                bg-white p-2 focus:border-sky-500 focus:outline-none  focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
+                required
               />
             </label>
             <div className="m-5" />
@@ -73,14 +92,61 @@ export default function Home() {
               showModal={showModal}
               setShowModal={setShowModal}
               setSelectedStock={setSelectedStock}
+              setSelectedStockQuote={setSelectedStockQuote}
             />
           ) : null}
         </div>
         {selectedStock && (
-          <div className="text-3xl">
-            {selectedStock.ticker + " - " + selectedStock.name}
+          <div className="m-5 w-1/2 text-5xl text-teal-500">
+            <Card
+              text={
+                "Showing Data For: " +
+                selectedStock.name +
+                " - " +
+                selectedStock.ticker
+              }
+            />
           </div>
         )}
+
+        {selectedStockQuote ? (
+          <div className="m-5 flex w-1/2 flex-col gap-4">
+            <div className="flex">
+              <div className="w-2/3">
+                <PriceCard
+                  text={"Open Price"}
+                  priceInCents={selectedStockQuote.o}
+                />
+              </div>
+              <div className="mx-5" />
+              <div className="w-2/3">
+                <PriceCard
+                  text={"High Price"}
+                  priceInCents={selectedStockQuote.h}
+                />
+              </div>
+            </div>
+            <div className="flex">
+              <div className="w-2/3">
+                <PriceCard
+                  text={"Low Price"}
+                  priceInCents={selectedStockQuote.l}
+                />
+              </div>
+              <div className="mx-5" />
+              <div className="w-2/3">
+                <PriceCard
+                  text={"Last Traded Price"}
+                  priceInCents={selectedStockQuote.c}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          selectedStock && <div>Loading</div>
+        )}
+
+        <div className="m-5" />
       </main>
     </>
   );
@@ -91,12 +157,20 @@ const ShowStocksModal = ({
   showModal,
   setShowModal,
   setSelectedStock,
+  setSelectedStockQuote,
 }: AppProps) => {
   if (stocks.length === 0) return <div>No Stock Found</div>;
 
-  const handleStockSelect = (idx: number) => {
+  setSelectedStock(null);
+  setSelectedStockQuote(null);
+
+  const handleStockSelect = async (idx: number) => {
     setSelectedStock(stocks[idx]);
     setShowModal(false);
+
+    const quote = await fetchStockQuote(stocks[idx].ticker);
+
+    setSelectedStockQuote(quote);
   };
 
   return (
@@ -209,6 +283,32 @@ const Spinner = () => {
   );
 };
 
+const PriceCard: React.FC<{ text: string; priceInCents?: number }> = ({
+  text,
+  priceInCents,
+}) => {
+  return (
+    <div className="flex rounded-md border-2 p-5 shadow-md ">
+      <div className="flex w-full content-center ">
+        <div className="text-3xl font-semibold">{text}</div>
+        {priceInCents && (
+          <div className="ml-2 pt-1 font-mono text-2xl ">
+            : $ {getDollars(priceInCents)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Card: React.FC<{ text: string }> = ({ text }) => {
+  return (
+    <div className="rounded-md border-2 py-10 px-5 shadow-md">
+      <div className="text-3xl font-semibold text-gray-700">{text}</div>
+    </div>
+  );
+};
+
 const fetchStockSearchData = async (searchQuery: string) => {
   //TODO: handle rate-limit case
   const POLYGON_KEY = env.NEXT_PUBLIC_POLYGON_KEY;
@@ -233,4 +333,22 @@ const fetchStockSearchData = async (searchQuery: string) => {
   ).results;
 
   return [...dataNasdaq, ...dataNYSE];
+};
+
+const fetchStockQuote = async (stockTicker: string) => {
+  const FINNHUB_KEY = env.NEXT_PUBLIC_FINNHUB_KEY;
+
+  const stockQuoteQuery = `https://finnhub.io/api/v1/quote?symbol=${stockTicker}&token=${FINNHUB_KEY}`;
+
+  const stockQuoteQueryResponse = await fetch(stockQuoteQuery);
+  const queryJSON = (await stockQuoteQueryResponse.json()) as StockQuote;
+
+  //convert dollars into cents
+  queryJSON.c = getCents(queryJSON.c);
+  queryJSON.h = getCents(queryJSON.h);
+  queryJSON.l = getCents(queryJSON.l);
+  queryJSON.o = getCents(queryJSON.o);
+  queryJSON.pc = getCents(queryJSON.pc);
+
+  return queryJSON;
 };
