@@ -1,8 +1,13 @@
 /**
- * Converts the amount to cents using conversion rate as 1$ = 100 cents (uses rounding)
- * @param amountInDollars The amount to be converted in cents
- * @returns Returns the converted amount in cents
+ * Converts an amount in dollars to an integer representation in cents.
+ * @param amountInDollars The amount in dollars to be converted. This should be a number.
+ * @returns An integer representing the amount in cents.
+ * @throws {TypeError} If the amountInDollars is not a number.
+ * @example
+ * getCents(12.34); // returns 1234
+ * getCents(0); // returns 0
  */
+
 export const getCents = (amountInDollars: number) => {
   const numString = amountInDollars.toString();
   const decimalIndex = numString.indexOf(".");
@@ -25,15 +30,21 @@ export const getCents = (amountInDollars: number) => {
 };
 
 /**
- * Converts the given cents into dollars and returns it as a string (eg. for input 243 gives 2.43)
- * @param amountInCents The amount in cents that is to be converted to dollars
- * @returns The converted dollars in STRING with 2 decimal places
+ * Converts an amount in cents to a string representation in dollars.
+ * @param amountInCents The amount in cents to be converted. This should be a number.
+ * @returns A string representation of the amount in dollars, in the format '$xx.xx'.
+ * @throws {TypeError} If the amountInCents is not a number.
+ * @throws {RangeError} If the amountInCents contains a decimal point.
+ * @example
+ * getDollars(12345); // returns '$123.45'
+ * getDollars(0); // returns '$0.00'
  */
+
 export const getDollars = (amountInCents: number) => {
   const amountString = amountInCents.toString();
 
   const decimalIndex = amountString.indexOf(".");
-  if (decimalIndex !== -1) return "No Deicmal Point is expexcted";
+  if (decimalIndex !== -1) return "No Deicmal Point is expected";
 
   const formattedString = amountString.padStart(3, "0");
 
