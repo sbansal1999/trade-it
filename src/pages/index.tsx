@@ -1,6 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import Head from "next/head";
-import { createRef, FormEvent, Fragment, useState } from "react";
+import { createRef, FormEvent, Fragment, useEffect, useState } from "react";
 import { PresentationChartLineIcon } from "@heroicons/react/24/outline";
 import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
 import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
@@ -27,6 +27,17 @@ type StockQuote = {
   dp: number;
 };
 
+type UserData = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  balance: number;
+};
+
+const inputField =
+  "mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500";
+
 export default function Home() {
   const [searchResults, setSearchResults] = useState<ITickersResults[]>([]);
   const searchRef = createRef<HTMLInputElement>();
@@ -35,6 +46,25 @@ export default function Home() {
   const [showSearchSpinner, setShowSearchSpinner] = useState(false);
   const [selectedStockQuote, setSelectedStockQuote] =
     useState<StockQuote | null>();
+
+  const [userData, setUserData] = useState<UserData>();
+
+  //Initial fetching of userData
+  useEffect(() => {
+    const getUserData = async () => {
+      const dummyData: UserData = {
+        balance: 10000,
+        email: "dummy@gmail.com",
+        firstName: "Dummy",
+        lastName: "User",
+        id: "some-random-id-will-come-here",
+      };
+
+      setUserData(dummyData);
+    };
+
+    getUserData();
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -58,6 +88,7 @@ export default function Home() {
       </Head>
       <main>
         <div className="w-fw mt-10 flex justify-center">
+          {JSON.stringify(userData)}
           <form onSubmit={handleSubmit}>
             <label>
               <span className="text-md font-medium text-slate-700">
@@ -68,8 +99,7 @@ export default function Home() {
                 type="text"
                 placeholder="AAPL"
                 ref={searchRef}
-                className="text-md placeholder-grey-500 disbled border-1 mt-1 block w-full rounded-md border-2 border-slate-400
-                bg-white p-2 focus:border-sky-500 focus:outline-none  focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
+                className={inputField}
                 required
               />
             </label>
@@ -97,7 +127,7 @@ export default function Home() {
           ) : null}
         </div>
         {selectedStock && (
-          <div className="m-5 w-1/2 text-5xl text-teal-500">
+          <div className="m-5 text-5xl text-teal-500 lg:w-1/2">
             <Card
               text={
                 "Showing Data For: " +
@@ -110,7 +140,7 @@ export default function Home() {
         )}
 
         {selectedStockQuote ? (
-          <div className="m-5 flex w-1/2 flex-col gap-4">
+          <div className="m-5 flex flex-col gap-4 md:w-5/6 lg:w-5/12">
             <div className="flex">
               <div className="w-2/3">
                 <PriceCard
@@ -147,6 +177,15 @@ export default function Home() {
         )}
 
         <div className="m-5" />
+        <div className="flex">
+          {userData && (
+            <PriceCard text="Current Balance" priceInCents={userData.balance} />
+          )}
+        </div>
+
+        <div className="w-1/6">
+          <input className={inputField} type="number" />
+        </div>
       </main>
     </>
   );
@@ -288,11 +327,11 @@ const PriceCard: React.FC<{ text: string; priceInCents?: number }> = ({
   priceInCents,
 }) => {
   return (
-    <div className="flex rounded-md border-2 p-5 shadow-md ">
+    <div className="flex rounded-md border-2 p-4 shadow-md ">
       <div className="flex w-full content-center ">
-        <div className="text-3xl font-semibold">{text}</div>
+        <div className="text-xl font-semibold">{text}</div>
         {priceInCents && (
-          <div className="ml-2 pt-1 font-mono text-2xl ">
+          <div className="ml-2 font-mono text-xl ">
             : $ {getDollars(priceInCents)}
           </div>
         )}
