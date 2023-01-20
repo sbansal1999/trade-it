@@ -1,47 +1,36 @@
 import { publicProcedure, router } from "../trpc";
 import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
 
-const tradeObject = z.object({
-  quantity: z.number().min(1).max(100),
-  ticker: z.string().nullable(),
-  price: z.number(),
-});
-
-type tradeObject = z.infer<typeof tradeObject>;
-
-const trades: tradeObject[] = [
-  {
-    quantity: 5,
-    ticker: "aapl",
-    price: 500,
-  },
-  {
-    quantity: 6,
-    ticker: "aapl",
-    price: 450,
-  },
-  {
-    quantity: 7,
-    ticker: "aapl",
-    price: 5012,
-  },
-  {
-    quantity: 8,
-    ticker: "aapl",
-    price: 5123,
-  },
-];
+const prisma = new PrismaClient();
 
 export const tradeRouter = router({
-  create: publicProcedure.input(tradeObject).mutation(({ input }) => {
-    return {
-      msg: `trade has been proccessed at price ${input.price}`,
-      ticker: `for the stock name ${input.ticker}`,
-    };
-  }),
-  show: publicProcedure.query(() => {
-    return trades;
-  }),
+  create: publicProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        symbol: z.string(),
+        quantity: z.number(),
+        price: z.number(),
+        action: z.enum(["BUY", "SELL"]),
+      })
+    )
+    .mutation(({ input }) => {
+      const trade = prisma.trades.create({
+        data: {
+          user: {
+            connect: {
+              id: input.userId,
+            },
+          },
+          symbol: input.symbol,
+          quantity: input.quantity,
+          price: input.price,
+          action: input.action,
+        },
+      });
+      return trade;
+    }),
 });
 
 export type AppRouter = typeof tradeRouter;
