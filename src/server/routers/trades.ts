@@ -16,7 +16,7 @@ export const tradeRouter = router({
       })
     )
     .mutation(({ input }) => {
-      const trade = prisma.trades.create({
+      const trade = prisma.trade.create({
         data: {
           user: {
             connect: {
