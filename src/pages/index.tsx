@@ -564,15 +564,16 @@ const fetchStockSearchData = async (searchQuery: string) => {
     limit: resultLimit,
   };
 
-  const dataNasdaq = (
-    await reference.tickers({ ...queryObject, exchange: "XNAS" })
-  ).results;
+  const promiseNasdaq = reference.tickers({ ...queryObject, exchange: "XNAS" });
+  const promiseNYSE = reference.tickers({ ...queryObject, exchange: "XNYS" });
 
-  const dataNYSE = (
-    await reference.tickers({ ...queryObject, exchange: "XNYS" })
-  ).results;
+  const [dataNasdaq, dataNYSE] = await Promise.all([
+    promiseNasdaq,
+    promiseNYSE,
+  ]);
 
-  return [...dataNasdaq, ...dataNYSE];
+  const data = [...dataNasdaq.results, ...dataNYSE.results];
+  return data;
 };
 
 const fetchStockQuote = async (stockTicker: string) => {
