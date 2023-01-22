@@ -5,6 +5,7 @@ import {
   PresentationChartLineIcon,
   Square2StackIcon,
   ArrowPathIcon,
+  CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
 import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
 import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
@@ -73,26 +74,8 @@ export default function Home() {
     queryFn: fetchUserData,
   });
 
-  const handleBuy = () => {
-    // if (!selectedStock) {
-    //   return;
-    // }
-
-    // if (!selectedStockQuote) {
-    //   return;
-    // }
-
-    // if (!userData) {
-    //   return;
-    // }
-
-    // tradeMutation.mutate({
-    //   quantity,
-    //   price: selectedStockQuote.c,
-    //   userId: userData.id,
-    //   action: "BUY",
-    //   symbol: selectedStock.ticker,
-    // });
+  const handleBuy = (e: FormEvent) => {
+    e.preventDefault();
 
     setShowConfirmOrderModal(true);
   };
@@ -121,6 +104,19 @@ export default function Home() {
     const quoteData = await fetchStockQuote(selectedStock.ticker);
     setSelectedStockQuote(quoteData);
     setAnimateRefreshIcon(false);
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!selectedStock || !selectedStockQuote) {
+      return;
+    }
+
+    const orderData = {
+      ticker: selectedStock.ticker,
+      quantity,
+      price: selectedStockQuote.c,
+      brokerage,
+    };
   };
 
   return (
@@ -184,65 +180,37 @@ export default function Home() {
 
         {selectedStockQuote ? (
           <div>
-            <div className="m-5 flex flex-col gap-4 md:w-5/6 lg:w-5/12">
-              <div className="flex">
-                <div className="w-2/3">
-                  <PriceCard text={"Open Price"} value={selectedStockQuote.o} />
-                </div>
-                <div className="mx-5" />
-                <div className="w-2/3">
-                  <PriceCard text={"High Price"} value={selectedStockQuote.h} />
-                </div>
-              </div>
-              <div className="flex">
-                <div className="w-2/3">
-                  <PriceCard text={"Low Price"} value={selectedStockQuote.l} />
-                </div>
-                <div className="mx-5" />
-                <div className="w-2/3">
-                  <PriceCard
-                    text={"Last Traded Price"}
-                    value={selectedStockQuote.c}
-                  />
-                </div>
-              </div>
-              <div>{new Date(selectedStockQuote.t * 1000).toString()}</div>
+            <div>
+              <ShowQuote quote={selectedStockQuote} />
             </div>
             <div>
-              <span className="text-md font-medium text-slate-700">
-                Enter Quantity
-              </span>
-              <div className="mt-3 w-[15vw] border-2">
-                <input
-                  type="number"
-                  placeholder="1"
-                  className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
-                  required
-                  value={quantity == 0 ? "" : quantity}
-                  onChange={(e) => {
-                    if (e.target.value === "") {
-                      setQuantity(0);
-                      return;
-                    }
-                    setQuantity(parseInt(e.target.value));
-                  }}
-                />
-
-                <div className="m-5 flex justify-center">
-                  <button
-                    className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900"
-                    onClick={() => {
-                      if (!quantity) {
+              <form onSubmit={handleBuy}>
+                <span className="text-md font-medium text-slate-700">
+                  Enter Quantity
+                </span>
+                <div className="mt-3 w-[15vw] border-2">
+                  <input
+                    type="number"
+                    placeholder="1"
+                    className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
+                    required
+                    value={quantity == 0 ? "" : quantity}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setQuantity(0);
                         return;
                       }
-
-                      handleBuy();
+                      setQuantity(parseInt(e.target.value));
                     }}
-                  >
-                    <span className="text-2xl">BUY</span>
-                  </button>
+                  />
+
+                  <div className="m-5 flex justify-center">
+                    <button className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900">
+                      <span className="text-2xl">BUY</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         ) : (
@@ -290,8 +258,8 @@ export default function Home() {
                       <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-2/5 sm:max-w-max">
                         <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                           <div className="sm:flex sm:items-start">
-                            <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                              <PresentationChartLineIcon className="w-6" />
+                            <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-300 sm:mx-0 sm:h-10 sm:w-10">
+                              <CheckBadgeIcon className="w-6" />
                             </div>
                             <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                               <Dialog.Title
@@ -330,7 +298,10 @@ export default function Home() {
                                   </div>
                                 </div>
                               </Dialog.Title>
-                              <Dialog.Description className="w-fw mt-2">
+                              <Dialog.Description
+                                className="w-fw mt-2"
+                                as="div"
+                              >
                                 <div className="flex flex-col">
                                   <div>Symbol : {selectedStock.ticker}</div>
                                   <div>Stock Name: {selectedStock.name}</div>
@@ -354,12 +325,23 @@ export default function Home() {
                                         brokerage
                                     )}
                                   </div>
+                                  <div>
+                                    Last Updated:{" "}
+                                    {formatToEST(selectedStockQuote.t)}
+                                  </div>
                                 </div>
                               </Dialog.Description>
                             </div>
                           </div>
                         </div>
                         <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button
+                            type="button"
+                            className="inline-flex w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                            onClick={handleConfirmOrder}
+                          >
+                            Confirm Order
+                          </button>
                           <button
                             type="button"
                             className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
@@ -367,6 +349,7 @@ export default function Home() {
                           >
                             Go Back
                           </button>
+                          
                         </div>
                       </Dialog.Panel>
                     </Transition.Child>
@@ -497,6 +480,56 @@ const ShowStocksModal = ({
   );
 };
 
+const ShowQuote: React.FC<{ quote: StockQuote }> = ({ quote }) => {
+  const timeStamp = new Date(quote.t * 1000);
+  const timeStampInEST =
+    timeStamp.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+    }) + " EST";
+  const timeStampInIST =
+    timeStamp.toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    }) + " IST";
+
+  const [isTimeInIST, setIsTimeInIST] = useState(false);
+
+  return (
+    <div className="m-5 flex flex-col gap-4 tracking-tight md:w-5/6 lg:w-6/12">
+      <div className="flex">
+        <div className="w-2/3">
+          <PriceCard text={"Open Price"} value={quote.o} />
+        </div>
+        <div className="mx-5" />
+        <div className="w-2/3">
+          <PriceCard text={"High Price"} value={quote.h} />
+        </div>
+      </div>
+      <div className="flex">
+        <div className="w-2/3">
+          <PriceCard text={"Low Price"} value={quote.l} />
+        </div>
+        <div className="mx-5" />
+        <div className="w-2/3">
+          <PriceCard text={"Last Traded Price"} value={quote.c} />
+        </div>
+      </div>
+      <div className="flex items-center justify-between rounded-md border-2 p-4 shadow-md">
+        <div className="text-xl font-light">
+          Last Updated: {isTimeInIST ? timeStampInIST : timeStampInEST}
+        </div>
+        <div>
+          <button
+            className="rounded-md bg-gray-500 px-5 py-2 text-xl hover:bg-gray-400 hover:text-white hover:ring-2 hover:ring-gray-500"
+            onClick={() => setIsTimeInIST((val) => !val)}
+          >
+            Switch
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Spinner = () => {
   return (
     <svg
@@ -529,14 +562,12 @@ const PriceCard: React.FC<{
 }> = ({ text, value, noDollars }) => {
   return (
     <div className="flex rounded-md border-2 p-4 shadow-md ">
-      <div className="flex w-full content-center ">
-        <div className="text-xl font-semibold">{text}</div>
-        {value && (
-          <div className="ml-2 font-mono text-xl ">
-            : {noDollars ? value : "$" + getDollars(value)}
-          </div>
-        )}
-      </div>
+      <div className="text-xl font-semibold">{text}</div>
+      {value && (
+        <div className="ml-2 font-mono text-xl ">
+          : {noDollars ? value : "$" + getDollars(value)}
+        </div>
+      )}
     </div>
   );
 };
@@ -604,4 +635,12 @@ const fetchUserData = () => {
   };
 
   return dummyData;
+};
+
+const formatToEST = (seconds: number) => {
+  const date = new Date(seconds * 1000);
+  const dateInEST = date.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+  });
+  return dateInEST;
 };
