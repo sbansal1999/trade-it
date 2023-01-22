@@ -639,7 +639,7 @@ const fetchUserData = () => {
     lastName: "Wick",
     balance: 10000,
     email: "john@wick.com",
-    id: "0333e91f-64d2-4181-819f-1490a97ed64c",
+    id: "818cf69e-b17c-41e8-929c-01b79b502f49",
   };
 
   return dummyData;
