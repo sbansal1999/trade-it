@@ -16,7 +16,7 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const user = await prisma.users.create({
+      const user = await prisma.user.create({
         data: {
           ...input,
         },
