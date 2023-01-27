@@ -1,20 +1,17 @@
 import { Dialog, Transition } from "@headlessui/react";
 import Head from "next/head";
-import { createRef, FormEvent, Fragment, useEffect, useState } from "react";
+import { createRef, FormEvent, Fragment, useState } from "react";
 import {
   PresentationChartLineIcon,
-  Square2StackIcon,
-  ArrowPathIcon,
   CheckBadgeIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
 import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
-import { faker } from "@faker-js/faker";
 
 import { env } from "../env/client.mjs";
 import { getCents, getDollars } from "../utils/utils";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { trpc } from "../utils/trpc";
 
 type ShowStocksModalProps = {
@@ -58,13 +55,14 @@ export default function Home() {
   const [animateRefreshIcon, setAnimateRefreshIcon] = useState(false);
 
   const [searchResults, setSearchResults] = useState<ITickersResults[]>([]);
-  const [showModal, setShowModal] = useState(true);
+  const [showStocksListModal, setShowStocksListModal] = useState(true);
   const [selectedStock, setSelectedStock] = useState<ITickersResults | null>();
   const [showSearchSpinner, setShowSearchSpinner] = useState(false);
   const [selectedStockQuote, setSelectedStockQuote] =
     useState<StockQuote | null>();
   const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
   const [brokerage, setBrokerage] = useState(0);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
 
   const tradeMutation = trpc.trades.create.useMutation();
 
@@ -90,9 +88,15 @@ export default function Home() {
     const searchQuery = searchRef.current.value;
     setShowSearchSpinner(true);
     const searchData = await fetchStockSearchData(searchQuery);
+
+    if (searchData.length === 0) {
+      setShowRateLimitModal(true);
+    } else {
+      setSearchResults(searchData);
+      setShowStocksListModal(true);
+    }
+
     setShowSearchSpinner(false);
-    setSearchResults(searchData);
-    setShowModal(true);
   };
 
   const handleRefresh = async () => {
@@ -164,70 +168,74 @@ export default function Home() {
           </form>
         </div>
         <div>
-          {showModal ? (
-            <ShowStocksModal
+          {showStocksListModal ? (
+            <StocksListModal
               stocks={searchResults}
-              showModal={showModal}
-              setShowModal={setShowModal}
+              showModal={showStocksListModal}
+              setShowModal={setShowStocksListModal}
               setSelectedStock={setSelectedStock}
               setSelectedStockQuote={setSelectedStockQuote}
             />
           ) : null}
         </div>
-        {selectedStock && (
-          <div className="m-5 text-5xl text-teal-500 lg:w-1/2">
-            <Card
-              text={
-                "Showing Data For: " +
-                selectedStock.name +
-                " - " +
-                selectedStock.ticker
-              }
-            />
-          </div>
-        )}
 
-        {selectedStockQuote ? (
-          <div>
-            <div>
-              <ShowQuote quote={selectedStockQuote} />
+        <div>
+          {selectedStock && (
+            <div className="ml-2 mt-2 text-5xl text-teal-500 lg:w-1/2">
+              <Card
+                text={
+                  "Showing Data For: " +
+                  selectedStock.name +
+                  " - " +
+                  selectedStock.ticker
+                }
+              />
             </div>
-            <div>
-              <form onSubmit={handleBuy}>
-                <span className="text-md font-medium text-slate-700">
-                  Enter Quantity
-                </span>
-                <div className="mt-3 w-[15vw] border-2">
-                  <input
-                    type="number"
-                    placeholder="1"
-                    className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
-                    required
-                    value={quantity == 0 ? "" : quantity}
-                    onChange={(e) => {
-                      if (e.target.value === "") {
-                        setQuantity(0);
-                        return;
-                      }
-                      setQuantity(parseInt(e.target.value));
-                    }}
-                  />
+          )}
 
-                  <div className="m-5 flex justify-center">
-                    <button className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900">
-                      <span className="text-2xl">BUY</span>
-                    </button>
+          {selectedStockQuote ? (
+            <div className="ml-5">
+              <div className="mt-5">
+                <ShowQuote quote={selectedStockQuote} />
+              </div>
+              <div className="mt-5 ">
+                <form onSubmit={handleBuy}>
+                  <span className="text-xl font-medium text-slate-700">
+                    Enter Quantity
+                  </span>
+                  <div className="mt-3 w-[15vw] border-2 p-2">
+                    <input
+                      type="number"
+                      placeholder="1"
+                      className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
+                      required
+                      value={quantity == 0 ? "" : quantity}
+                      onChange={(e) => {
+                        if (e.target.value === "") {
+                          setQuantity(0);
+                          return;
+                        }
+                        setQuantity(parseInt(e.target.value));
+                      }}
+                    />
+
+                    <div className="m-5 flex justify-center">
+                      <button className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900">
+                        <span className="text-2xl">BUY</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
-        ) : (
-          selectedStock && <div>Loading</div>
-        )}
+          ) : (
+            selectedStock && <div>Loading</div>
+          )}
+        </div>
 
         <div className="m-5" />
-        <div className="flex">
+
+        <div className="m-5 flex">
           {userData && (
             <PriceCard text="Current Balance" value={userData.balance} />
           )}
@@ -368,6 +376,13 @@ export default function Home() {
           </>
         )}
 
+        {showRateLimitModal && (
+          <RateLimitModal
+            setShowRateLimitModal={setShowRateLimitModal}
+            showRateLimitModal={showRateLimitModal}
+          />
+        )}
+
         {JSON.stringify(userData)}
         <br />
         {JSON.stringify(selectedStock)}
@@ -382,7 +397,7 @@ export default function Home() {
   );
 }
 
-const ShowStocksModal = ({
+const StocksListModal = ({
   stocks,
   showModal,
   setShowModal,
@@ -502,7 +517,7 @@ const ShowQuote: React.FC<{ quote: StockQuote }> = ({ quote }) => {
   const [isTimeInIST, setIsTimeInIST] = useState(false);
 
   return (
-    <div className="m-5 flex flex-col gap-4 tracking-tight md:w-5/6 lg:w-6/12">
+    <div className="flex flex-col gap-4 tracking-tight md:w-5/6 lg:w-6/12">
       <div className="flex">
         <div className="w-2/3">
           <PriceCard text={"Open Price"} value={quote.o} />
@@ -541,7 +556,7 @@ const ShowQuote: React.FC<{ quote: StockQuote }> = ({ quote }) => {
 const Spinner = () => {
   return (
     <svg
-      className="-ml-1 mr-3 h-9 w-8 animate-spin text-white"
+      className="ml-2 mr-3 h-9 w-8 animate-spin text-white"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -606,13 +621,19 @@ const fetchStockSearchData = async (searchQuery: string) => {
   const promiseNasdaq = reference.tickers({ ...queryObject, exchange: "XNAS" });
   const promiseNYSE = reference.tickers({ ...queryObject, exchange: "XNYS" });
 
-  const [dataNasdaq, dataNYSE] = await Promise.all([
-    promiseNasdaq,
-    promiseNYSE,
-  ]);
+  try {
+    const [dataNasdaq, dataNYSE] = await Promise.all([
+      promiseNasdaq,
+      promiseNYSE,
+    ]);
+    console.log(dataNYSE);
+    console.log(dataNasdaq);
 
-  const data = [...dataNasdaq.results, ...dataNYSE.results];
-  return data;
+    const data = [...dataNasdaq.results, ...dataNYSE.results];
+    return data;
+  } catch (error) {
+    return [];
+  }
 };
 
 const fetchStockQuote = async (stockTicker: string) => {
@@ -651,4 +672,79 @@ const formatToEST = (seconds: number) => {
     timeZone: "America/New_York",
   });
   return dateInEST;
+};
+
+const RateLimitModal: React.FC<{
+  showRateLimitModal: boolean;
+  setShowRateLimitModal: (val: boolean) => void;
+}> = ({ showRateLimitModal, setShowRateLimitModal }) => {
+  return (
+    <>
+      <Transition.Root show={showRateLimitModal} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setShowRateLimitModal(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-2/5 sm:max-w-max">
+                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div className="sm:flex sm:items-start">
+                      <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <ExclamationCircleIcon className="w-6" />
+                      </div>
+                      <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-lg font-medium leading-6 text-gray-900"
+                        >
+                          <p className="text-xl text-red-600">
+                            You have exceeded the rate limit for this API.
+                          </p>
+                          <p className="text-md text-slate-700">
+                            Kindly try again after 5 minutes.
+                          </p>
+                        </Dialog.Title>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button
+                      type="button"
+                      className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={() => setShowRateLimitModal(false)}
+                    >
+                      Go Back
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
+    </>
+  );
 };
