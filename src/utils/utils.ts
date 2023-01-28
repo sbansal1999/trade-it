@@ -57,3 +57,19 @@ export const getDollars = (amountInCents: number) => {
 
   return finalDollarString;
 };
+
+/**
+ * Generates a random ID in the format of timestamp + 3 digit random number
+ * @returns A random ID
+ */
+export const getRandomID = () => {
+  var randomNum = Math.floor(Math.random() * 1000);
+  if (randomNum < 100) randomNum = randomNum + 100;
+
+  var timestamp = Date.now();
+
+  if (timestamp < 1000000000000) timestamp = timestamp + 1000000000000;
+  if (timestamp > 9999999999999) timestamp = timestamp - 1000000000000;
+
+  return `${timestamp}${randomNum}`;
+};
