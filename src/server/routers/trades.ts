@@ -13,6 +13,7 @@ export const tradeRouter = router({
         quantity: z.number(),
         price: z.number(),
         action: z.enum(["BUY", "SELL"]),
+        orderId: z.string().length(16),
       })
     )
     .mutation(({ input }) => {
@@ -27,6 +28,7 @@ export const tradeRouter = router({
           quantity: input.quantity,
           price: input.price,
           action: input.action,
+          orderId: input.orderId,
         },
       });
       return trade;
