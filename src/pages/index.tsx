@@ -10,7 +10,7 @@ import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
 import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
 
 import { env } from "../env/client.mjs";
-import { getCents, getDollars } from "../utils/utils";
+import { getCents, getDollars, getRandomID } from "../utils/utils";
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "../utils/trpc";
 
@@ -61,10 +61,14 @@ export default function Home() {
   const [selectedStockQuote, setSelectedStockQuote] =
     useState<StockQuote | null>();
   const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
-  const [brokerage, setBrokerage] = useState(0);
+  const [brokerageInCents, setBrokerageInCents] = useState(0);
   const [showRateLimitModal, setShowRateLimitModal] = useState(false);
+  const [showInsufficientFundsModal, setShowInsufficientFundsModal] =
+    useState(false);
 
   const tradeMutation = trpc.trades.create.useMutation();
+
+  const userQuery = trpc.users.getUserByID;
 
   //Initial fetching of userData
   const { data: userData } = useQuery({
@@ -72,8 +76,21 @@ export default function Home() {
     queryFn: fetchUserData,
   });
 
+  function fetchUserData() {
+    const dummyData: UserData = {
+      firstName: "John",
+      lastName: "Wick",
+      balance: 10000,
+      email: "john@wick.com",
+      id: "818cf69e-b17c-41e8-929c-01b79b502f49",
+    };
+
+    return dummyData;
+  }
+
   const handleBuy = (e: FormEvent) => {
     e.preventDefault();
+    tradeMutation.reset();
 
     setShowConfirmOrderModal(true);
   };
@@ -87,16 +104,21 @@ export default function Home() {
 
     const searchQuery = searchRef.current.value;
     setShowSearchSpinner(true);
-    const searchData = await fetchStockSearchData(searchQuery);
 
-    if (searchData.length === 0) {
-      setShowRateLimitModal(true);
-    } else {
+    try {
+      const searchData = await fetchStockSearchData(searchQuery);
+      setShowSearchSpinner(false);
+
+      if (searchData.length === 0) {
+        return;
+      }
+
       setSearchResults(searchData);
       setShowStocksListModal(true);
+    } catch (error) {
+      setShowSearchSpinner(false);
+      setShowRateLimitModal(true);
     }
-
-    setShowSearchSpinner(false);
   };
 
   const handleRefresh = async () => {
@@ -467,7 +489,7 @@ const StocksListModal = ({
                           </p>
                         </Dialog.Title>
                         <Dialog.Description className="w-fw mt-5" as="div">
-                          <div className="mt-2 max-h-[40rem] overflow-auto rounded-md">
+                          <div className="mt-2 max-h-[60vh] overflow-auto rounded-md">
                             {stocks.map((stock, idx) => (
                               <button
                                 className="mt-1 w-full bg-slate-300 p-5 text-left hover:bg-slate-600"
@@ -626,13 +648,10 @@ const fetchStockSearchData = async (searchQuery: string) => {
       promiseNasdaq,
       promiseNYSE,
     ]);
-    console.log(dataNYSE);
-    console.log(dataNasdaq);
-
     const data = [...dataNasdaq.results, ...dataNYSE.results];
     return data;
   } catch (error) {
-    return [];
+    throw error;
   }
 };
 
@@ -652,18 +671,6 @@ const fetchStockQuote = async (stockTicker: string) => {
   queryJSON.pc = getCents(queryJSON.pc);
 
   return queryJSON;
-};
-
-const fetchUserData = () => {
-  const dummyData: UserData = {
-    firstName: "John",
-    lastName: "Wick",
-    balance: 10000,
-    email: "john@wick.com",
-    id: "818cf69e-b17c-41e8-929c-01b79b502f49",
-  };
-
-  return dummyData;
 };
 
 const formatToEST = (seconds: number) => {
