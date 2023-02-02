@@ -49,7 +49,7 @@ export const tradeRouter = router({
         },
       });
 
-      const trade = prisma.trade.create({
+      const trade = await prisma.trade.create({
         data: {
           user: {
             connect: {
