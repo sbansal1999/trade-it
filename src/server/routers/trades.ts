@@ -16,7 +16,39 @@ export const tradeRouter = router({
         orderId: z.string().length(16),
       })
     )
-    .mutation(({ input }) => {
+    .mutation(async ({ input }) => {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: input.userId,
+        },
+      });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      //this is a workaround for a bug in prisma
+      const balance = user.balance as unknown as number;
+      const orderValue = input.quantity * input.price;
+
+      if (input.action === "BUY") {
+        if (balance < orderValue) {
+          throw new Error("Insufficient funds");
+        }
+      }
+
+      const newUser = await prisma.user.update({
+        where: {
+          id: input.userId,
+        },
+        data: {
+          balance:
+            input.action === "BUY"
+              ? balance - orderValue
+              : balance + orderValue,
+        },
+      });
+
       const trade = prisma.trade.create({
         data: {
           user: {
