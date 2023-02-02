@@ -24,4 +24,18 @@ export const userRouter = router({
 
       return user;
     }),
+
+  getUserByID: publicProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!user) throw new Error("User not found");
+
+      return user;
+    }),
 });
