@@ -143,13 +143,29 @@ export default function Home() {
 
     const latestQuote = await fetchStockQuote(selectedStock.ticker);
 
-    tradeMutation.mutate({
-      symbol: selectedStock.ticker,
-      quantity,
-      price: latestQuote.c,
-      userId: userData.id,
-      action: "BUY",
-    });
+    const orderValue = latestQuote.c * quantity;
+
+    if (orderValue > userData.balance) {
+      setShowInsufficientFundsModal(true);
+      setShowConfirmOrderModal(false);
+      return;
+    }
+
+    tradeMutation.mutate(
+      {
+        symbol: selectedStock.ticker,
+        quantity,
+        price: latestQuote.c,
+        userId: userData.id,
+        action: "BUY",
+        orderId: getRandomID(),
+      },
+      {
+        onSuccess: () => {
+          userData.balance -= orderValue;
+        },
+      }
+    );
 
     setShowConfirmOrderModal(false);
   };
@@ -221,33 +237,97 @@ export default function Home() {
                 <ShowQuote quote={selectedStockQuote} />
               </div>
               <div className="mt-5 ">
-                <form onSubmit={handleBuy}>
-                  <span className="text-xl font-medium text-slate-700">
-                    Enter Quantity
-                  </span>
-                  <div className="mt-3 w-[15vw] border-2 p-2">
-                    <input
-                      type="number"
-                      placeholder="1"
-                      className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
-                      required
-                      value={quantity == 0 ? "" : quantity}
-                      onChange={(e) => {
-                        if (e.target.value === "") {
-                          setQuantity(0);
-                          return;
-                        }
-                        setQuantity(parseInt(e.target.value));
-                      }}
-                    />
+                <div className="flex">
+                  <form onSubmit={handleBuy}>
+                    <span className="text-xl font-medium text-slate-700">
+                      Enter Quantity
+                    </span>
+                    <div className="mt-3 w-[15vw] border-2 p-2">
+                      <input
+                        type="number"
+                        placeholder="1"
+                        className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
+                        required
+                        value={quantity == 0 ? "" : quantity}
+                        onChange={(e) => {
+                          if (e.target.value === "") {
+                            setQuantity(0);
+                            return;
+                          }
+                          setQuantity(parseInt(e.target.value));
+                        }}
+                        min={1}
+                      />
 
-                    <div className="m-5 flex justify-center">
-                      <button className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900">
-                        <span className="text-2xl">BUY</span>
-                      </button>
+                      <div className="m-5 flex justify-center">
+                        <button className="rounded-md bg-green-400 px-7 py-3 text-white hover:bg-blue-900">
+                          <span className="text-2xl">BUY</span>
+                        </button>
+                      </div>
                     </div>
+                  </form>
+
+                  <div>
+                    {tradeMutation.isSuccess && (
+                      <div className="flex items-center rounded-md bg-green-600 py-3 pl-5 pr-3 text-lg font-light tracking-tight text-white">
+                        Your order has been executed successfully. We will mail
+                        you the exact details shortly.
+                        <button
+                          onClick={() => tradeMutation.reset()}
+                          className="ml-2 rounded-md bg-green-300 hover:bg-green-800"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="h-8 w-8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    {tradeMutation.isError && (
+                      <div>
+                        <div className="flex items-center rounded-md bg-red-600 py-3 pl-5 pr-3 text-lg font-light tracking-tight text-white">
+                          Something went wrong. Please try again.
+                          <button
+                            onClick={() => tradeMutation.reset()}
+                            className="ml-2 rounded-md bg-red-300 hover:bg-red-800"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="h-8 w-8"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {tradeMutation.isLoading && (
+                      <div>
+                        <div className="flex items-center rounded-md bg-yellow-500 py-3 pl-5 pr-3 text-lg font-light tracking-tight text-white">
+                          Your trade is being processed. Please wait.
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </form>
+                </div>
               </div>
             </div>
           ) : (
@@ -263,6 +343,17 @@ export default function Home() {
           )}
         </div>
 
+        {JSON.stringify(userData)}
+        <br />
+        {JSON.stringify(selectedStock)}
+        <br />
+        {JSON.stringify(selectedStockQuote)}
+        <br />
+        {JSON.stringify(tradeMutation)}
+
+        <br />
+
+        {/* Modals are here */}
         {showConfirmOrderModal && selectedStock && selectedStockQuote && (
           <>
             <Transition.Root show={showConfirmOrderModal} as={Fragment}>
@@ -355,13 +446,13 @@ export default function Home() {
                                     )}
                                   </div>
                                   <div>
-                                    Brokerage: $ {getDollars(brokerage)}
+                                    Brokerage: $ {getDollars(brokerageInCents)}
                                   </div>
                                   <div>
                                     Total Order Value: ${" "}
                                     {getDollars(
                                       selectedStockQuote?.c * quantity +
-                                        brokerage
+                                        brokerageInCents
                                     )}
                                   </div>
                                   <div>
@@ -405,15 +496,13 @@ export default function Home() {
           />
         )}
 
-        {JSON.stringify(userData)}
-        <br />
-        {JSON.stringify(selectedStock)}
-        <br />
-        {JSON.stringify(selectedStockQuote)}
-        <br />
-        {JSON.stringify(tradeMutation)}
-
-        <br />
+        {showInsufficientFundsModal && userData && (
+          <InsufficientFundsModal
+            setShowInsufficientFundsModal={setShowInsufficientFundsModal}
+            showInsufficientFundsModal={showInsufficientFundsModal}
+            userData={userData}
+          />
+        )}
       </main>
     </>
   );
@@ -742,6 +831,95 @@ const RateLimitModal: React.FC<{
                       type="button"
                       className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
                       onClick={() => setShowRateLimitModal(false)}
+                    >
+                      Go Back
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
+    </>
+  );
+};
+
+const InsufficientFundsModal: React.FC<{
+  showInsufficientFundsModal: boolean;
+  setShowInsufficientFundsModal: (val: boolean) => void;
+  userData: UserData;
+}> = ({
+  showInsufficientFundsModal,
+  setShowInsufficientFundsModal,
+  userData,
+}) => {
+  return (
+    <>
+      <Transition.Root show={showInsufficientFundsModal} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setShowInsufficientFundsModal(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-2/5 sm:max-w-max">
+                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div className="sm:flex sm:items-start">
+                      <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <ExclamationCircleIcon className="w-6" />
+                      </div>
+                      <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <Dialog.Title as="h3" className="text-lg font-medium">
+                          <p className="text-xl text-red-600">
+                            You have insufficient funds to make this payment.
+                          </p>
+                          <p className="text-md text-slate-700">
+                            Dear {`${userData.firstName} ${userData.lastName}`},
+                            you have a balance of ${``}{" "}
+                            {getDollars(userData.balance)} in your account.
+                            <br />
+                            If you want to continue, kindly mail us at {` `}
+                            <a
+                              href="mailto:tradeit15help@gmail.com"
+                              className="tracking-tighter text-red-400 hover:text-red-900"
+                            >
+                              tradeit15help@gmail.com
+                            </a>{" "}
+                            {` `} to top up your account OR you can sell some of
+                            your stocks to raise funds.
+                          </p>
+                        </Dialog.Title>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button
+                      type="button"
+                      className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={() => setShowInsufficientFundsModal(false)}
                     >
                       Go Back
                     </button>
