@@ -39,3 +39,5 @@ export const userRouter = router({
       return user;
     }),
 });
+
+export type AppRouter = typeof userRouter;

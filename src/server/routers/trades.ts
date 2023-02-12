@@ -37,7 +37,7 @@ export const tradeRouter = router({
         }
       }
 
-      const newUser = await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: {
           id: input.userId,
         },
@@ -63,6 +63,7 @@ export const tradeRouter = router({
           orderId: input.orderId,
         },
       });
+
       return trade;
     }),
 });
