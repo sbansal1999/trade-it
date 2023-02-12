@@ -18,7 +18,7 @@ model User {
   firstName   String
   lastName    String
   dateOfBirth DateTime
-  balance     Decimal  @default(10000)
+  balance     Int      @default(10000)
   createdAt   DateTime @default(now())
   Trade       Trade[]
 }
@@ -26,8 +26,8 @@ model User {
 model Trade {
   id        String   @id @default(uuid())
   symbol    String
-  quantity  Decimal
-  price     Decimal
+  quantity  Int
+  price     Int
   action    Action
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
