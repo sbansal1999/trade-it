@@ -72,7 +72,7 @@
         "no-undef-init": "error",
         "no-unneeded-ternary": ["error", { "defaultAssignment": false }],
         "no-unused-expressions": "error",
-        "no-unused-vars": ["error", { "ignoreRestSiblings": true }],
+        "no-unused-vars": ["warn", { "ignoreRestSiblings": true }],
         "no-useless-concat": "error",
         "no-useless-constructor": "error",
         "no-var": "error",
@@ -107,5 +107,11 @@
         "yoda": "error"
       }
     }
+  ],
+  "ignorePatterns": [
+    "tailwind.config.js",
+    "postcss.config.js",
+    "next.config.js",
+    "next-env.d.ts"
   ]
 }
