@@ -1,6 +1,7 @@
-import { publicProcedure, router } from "../trpc";
-import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
+import { z } from "zod";
+
+import { publicProcedure, router } from "../trpc";
 
 const prisma = new PrismaClient();
 
@@ -27,15 +28,13 @@ export const tradeRouter = router({
         throw new Error("User not found");
       }
 
-      //this is a workaround for a bug in prisma
+      // this is a workaround for a bug in prisma
       const balance = user.balance as unknown as number;
       const orderValue = input.quantity * input.price;
 
-      if (input.action === "BUY") {
-        if (balance < orderValue) {
+      if (input.action === "BUY" && balance < orderValue) {
           throw new Error("Insufficient funds");
         }
-      }
 
       const updatedUser = await prisma.user.update({
         where: {

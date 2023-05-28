@@ -12,21 +12,23 @@ export const getCents = (amountInDollars: number) => {
   const numString = amountInDollars.toString();
   const decimalIndex = numString.indexOf(".");
 
-  //the number has no decimal point
-  if (decimalIndex === -1) return amountInDollars * 100;
+  // the number has no decimal point
+  if (decimalIndex === -1) {
+    return amountInDollars * 100;
+  }
 
   const length = numString.length;
-  var formattedNumString = numString;
+  let formattedNumString = numString;
 
   if (length - 2 === decimalIndex) {
-    formattedNumString = numString.concat("0");
+    formattedNumString = `${numString}0`;
   }
 
   const finalAmount =
-    formattedNumString.substring(0, decimalIndex) +
-    formattedNumString.substring(decimalIndex + 1, decimalIndex + 3);
+    formattedNumString.slice(0, Math.max(0, decimalIndex)) +
+    formattedNumString.slice(decimalIndex + 1, decimalIndex + 3);
 
-  return parseInt(finalAmount, 10);
+  return Number.parseInt(finalAmount, 10);
 };
 
 /**
@@ -44,16 +46,18 @@ export const getDollars = (amountInCents: number) => {
   const amountString = amountInCents.toString();
 
   const decimalIndex = amountString.indexOf(".");
-  if (decimalIndex !== -1) return "No Deicmal Point is expected";
+  if (decimalIndex !== -1) {
+    return "No Deicmal Point is expected";
+  }
 
   const formattedString = amountString.padStart(3, "0");
 
   const length = formattedString.length;
 
   const finalDollarString =
-    formattedString.substring(0, length - 2) +
+    formattedString.slice(0, Math.max(0, length - 2)) +
     "." +
-    formattedString.substring(length - 2);
+    formattedString.slice(Math.max(0, length - 2));
 
   return finalDollarString;
 };
@@ -63,13 +67,19 @@ export const getDollars = (amountInCents: number) => {
  * @returns A random ID
  */
 export const getRandomID = () => {
-  var randomNum = Math.floor(Math.random() * 1000);
-  if (randomNum < 100) randomNum = randomNum + 100;
+  let randomNum = Math.floor(Math.random() * 1000);
+  if (randomNum < 100) {
+    randomNum = randomNum + 100;
+  }
 
-  var timestamp = Date.now();
+  let timestamp = Date.now();
 
-  if (timestamp < 1000000000000) timestamp = timestamp + 1000000000000;
-  if (timestamp > 9999999999999) timestamp = timestamp - 1000000000000;
+  if (timestamp < 1000000000000) {
+    timestamp = timestamp + 1000000000000;
+  }
+  if (timestamp > 9999999999999) {
+    timestamp = timestamp - 1000000000000;
+  }
 
   return `${timestamp}${randomNum}`;
 };

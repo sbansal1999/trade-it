@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { publicProcedure, router } from "../trpc";
-const prisma = new PrismaClient();
-
 import z from "zod";
+
+import { publicProcedure, router } from "../trpc";
+
+const prisma = new PrismaClient();
 
 export const userRouter = router({
   createUser: publicProcedure
@@ -34,7 +35,7 @@ export const userRouter = router({
         },
       });
 
-      if (!user) throw new Error("User not found");
+      if (!user) {throw new Error("User not found");}
 
       return user;
     }),

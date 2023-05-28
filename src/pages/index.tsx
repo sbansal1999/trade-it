@@ -1,18 +1,18 @@
 import { Dialog, Transition } from "@headlessui/react";
-import Head from "next/head";
-import { createRef, FormEvent, Fragment, useState } from "react";
 import {
-  PresentationChartLineIcon,
   CheckBadgeIcon,
   ExclamationCircleIcon,
+  PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 import { ITickersQuery, referenceClient } from "@polygon.io/client-js";
-import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers.js";
+import { ITickersResults } from "@polygon.io/client-js/lib/rest/reference/tickers";
+import { useQuery } from "@tanstack/react-query";
+import Head from "next/head";
+import { FormEvent, Fragment, createRef, useState } from "react";
 
 import { env } from "../env/client.mjs";
-import { getCents, getDollars, getRandomID } from "../utils/utils";
-import { useQuery } from "@tanstack/react-query";
 import { trpc } from "../utils/trpc";
+import { getCents, getDollars, getRandomID } from "../utils/utils";
 
 type ShowStocksModalProps = {
   stocks: ITickersResults[];
@@ -70,7 +70,7 @@ export default function Home() {
 
   const userQuery = trpc.users.getUserByID;
 
-  //Initial fetching of userData
+  // Initial fetching of userData
   const { data: userData } = useQuery({
     queryKey: ["userData"],
     queryFn: fetchUserData,
@@ -115,7 +115,7 @@ export default function Home() {
 
       setSearchResults(searchData);
       setShowStocksListModal(true);
-    } catch (error) {
+    } catch {
       setShowSearchSpinner(false);
       setShowRateLimitModal(true);
     }
@@ -161,7 +161,7 @@ export default function Home() {
         orderId: getRandomID(),
       },
       {
-        onSuccess: () => {
+        onSuccess() {
           userData.balance -= orderValue;
         },
       }
@@ -248,13 +248,13 @@ export default function Home() {
                         placeholder="1"
                         className="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white p-2 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:invalid:border-pink-500"
                         required
-                        value={quantity == 0 ? "" : quantity}
+                        value={quantity === 0 ? "" : quantity}
                         onChange={(e) => {
                           if (e.target.value === "") {
                             setQuantity(0);
                             return;
                           }
-                          setQuantity(parseInt(e.target.value));
+                          setQuantity(Number.parseInt(e.target.value));
                         }}
                         min={1}
                       />
@@ -515,7 +515,7 @@ const StocksListModal = ({
   setSelectedStock,
   setSelectedStockQuote,
 }: ShowStocksModalProps) => {
-  if (stocks.length === 0) return <div>No Stock Found</div>;
+  if (stocks.length === 0) {return <div>No Stock Found</div>;}
 
   // setSelectedStock(null);
   // setSelectedStockQuote(null);
@@ -584,7 +584,7 @@ const StocksListModal = ({
                                 className="mt-1 w-full bg-slate-300 p-5 text-left hover:bg-slate-600"
                                 key={idx}
                                 onClick={() => {
-                                  handleStockSelect(idx);
+                                  void handleStockSelect(idx);
                                 }}
                               >
                                 {stock.ticker + " - " + stock.name}
@@ -664,8 +664,7 @@ const ShowQuote: React.FC<{ quote: StockQuote }> = ({ quote }) => {
   );
 };
 
-const Spinner = () => {
-  return (
+const Spinner = () => (
     <svg
       className="ml-2 mr-3 h-9 w-8 animate-spin text-white"
       xmlns="http://www.w3.org/2000/svg"
@@ -687,14 +686,12 @@ const Spinner = () => {
       ></path>
     </svg>
   );
-};
 
 const PriceCard: React.FC<{
   text: string;
   value?: number;
   noDollars?: boolean;
-}> = ({ text, value, noDollars }) => {
-  return (
+}> = ({ text, value, noDollars }) => (
     <div className="flex rounded-md border-2 p-4 shadow-md ">
       <div className="text-xl font-semibold">{text}</div>
       {value && (
@@ -704,18 +701,15 @@ const PriceCard: React.FC<{
       )}
     </div>
   );
-};
 
-const Card: React.FC<{ text: string }> = ({ text }) => {
-  return (
+const Card: React.FC<{ text: string }> = ({ text }) => (
     <div className="rounded-md border-2 py-10 px-5 shadow-md">
       <div className="text-3xl font-semibold text-gray-700">{text}</div>
     </div>
   );
-};
 
 const fetchStockSearchData = async (searchQuery: string) => {
-  //TODO: handle rate-limit case
+  // TODO: handle rate-limit case
   const POLYGON_KEY = env.NEXT_PUBLIC_POLYGON_KEY;
   const resultLimit = 10;
 
@@ -732,6 +726,7 @@ const fetchStockSearchData = async (searchQuery: string) => {
   const promiseNasdaq = reference.tickers({ ...queryObject, exchange: "XNAS" });
   const promiseNYSE = reference.tickers({ ...queryObject, exchange: "XNYS" });
 
+  // eslint-disable-next-line no-useless-catch
   try {
     const [dataNasdaq, dataNYSE] = await Promise.all([
       promiseNasdaq,
@@ -752,7 +747,7 @@ const fetchStockQuote = async (stockTicker: string) => {
   const stockQuoteQueryResponse = await fetch(stockQuoteQuery);
   const queryJSON = (await stockQuoteQueryResponse.json()) as StockQuote;
 
-  //convert dollars into cents
+  // convert dollars into cents
   queryJSON.c = getCents(queryJSON.c);
   queryJSON.h = getCents(queryJSON.h);
   queryJSON.l = getCents(queryJSON.l);
@@ -773,8 +768,7 @@ const formatToEST = (seconds: number) => {
 const RateLimitModal: React.FC<{
   showRateLimitModal: boolean;
   setShowRateLimitModal: (val: boolean) => void;
-}> = ({ showRateLimitModal, setShowRateLimitModal }) => {
-  return (
+}> = ({ showRateLimitModal, setShowRateLimitModal }) => (
     <>
       <Transition.Root show={showRateLimitModal} as={Fragment}>
         <Dialog
@@ -843,7 +837,6 @@ const RateLimitModal: React.FC<{
       </Transition.Root>
     </>
   );
-};
 
 const InsufficientFundsModal: React.FC<{
   showInsufficientFundsModal: boolean;
@@ -853,8 +846,7 @@ const InsufficientFundsModal: React.FC<{
   showInsufficientFundsModal,
   setShowInsufficientFundsModal,
   userData,
-}) => {
-  return (
+}) => (
     <>
       <Transition.Root show={showInsufficientFundsModal} as={Fragment}>
         <Dialog
@@ -932,4 +924,3 @@ const InsufficientFundsModal: React.FC<{
       </Transition.Root>
     </>
   );
-};
