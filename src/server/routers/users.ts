@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { TRPCClientError } from "@trpc/client";
 import z from "zod";
 
 import { publicProcedure, router } from "../trpc";
@@ -27,15 +28,17 @@ export const userRouter = router({
     }),
 
   getUserByID: publicProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.string().uuid())
     .query(async ({ input }) => {
       const user = await prisma.user.findUnique({
         where: {
-          id: input.id,
+          id: input,
         },
       });
 
-      if (!user) {throw new Error("User not found");}
+      if (!user) {
+        throw new TRPCClientError("User not found");
+      }
 
       return user;
     }),
